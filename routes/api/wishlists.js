@@ -1,60 +1,56 @@
 const express = require('express');
-const wishlists = require('../../Wishlists');
 const router = express.Router();
 const uuid = require('uuid');
-const MongoClient = require('mongodb').MongoClient;
+const MongoClient = require('mongodb').MongoClient,
+  format = require('util').format;
 const assert = require('assert');
 
 // Connection URL
-const url = 'mongodb://david:password99@ds127536.mlab.com:27536/save-spend-share';
+// const url =
+//   'mongodb://david:password99@ds127536.mlab.com:27536/save-spend-share';
+const url = 'mongodb://localhost:27017/wishlists';
 
 // Database Name
-const dbName = 'save-spend-share';
+const dbName = 'wishlists';
+
 // Create a new MongoClient
 const client = new MongoClient(url);
 var db;
 // Use connect method to connect to the Server
 client.connect(function(err) {
   // assert.equal(null, err);
-  if(err) {
-    console.error(err)
-    return
+  if (err) {
+    console.error(err);
+    return;
   }
-  console.log("Connected successfully to server");
-
-  
-  db = client.db(dbName);  
-//  console.log(db);
-  // client.close();
+  console.log('Connected successfully to server');
+  db = client.db(dbName);
 });
 
-
-
-
 router.get('/', (req, res) => {
-  
-  db.collection("wishlists").find({}).toArray(function(err, result) {
-    if (err) throw err;
-    res.json(result)
-    
-  });
-  // res.json(wishlists);
+  const results = db
+    .collection('wishlists')
+    .find({})
+    .toArray(function(err, result) {
+      if (err) throw err;
+      res.json(result);
+    });
 });
 
 // GET SINGLE wishlist
-router.get('/:id', (req, res) => {
-  db.collection("wishlists").findOne({_id: req.params.id}, function(err, result) {
-    if (err) throw err;
-    
-    console.log('id passed in is %s', req.params.id)
-    res.json(result)
-    // db.close();
-  });
 
+router.get('/:name', (req, res) => {
+  const result = db
+    .collection('wishlists')
+    .findOne({ name: req.params.name }, function(err, result) {
+      if (err) throw err;
+      res.json(result);
+    });
+
+  // res.json(result);
 });
 
 router.post('/', (req, res) => {
-
   const newWishlist = {
     id: uuid.v4(),
     name: req.body.name,
@@ -64,57 +60,70 @@ router.post('/', (req, res) => {
   if (!newWishlist.name || !newWishlist.goal) {
     return res.status(400).json({ msg: 'please include name and goal' });
   }
-  const collection = db.collection('wishlists')
-  collection.insertOne({name: req.body.name, goal: req.body.goal, added: req.body.added}, (err, result) => {
-    console.log(err, result);
-    res.json(result)
-  })
-
-  // wishlists.push(newWishlist);
-
-  // res.json(wishlists);
+  const collection = db.collection('wishlists');
+  collection.insertOne(
+    { name: req.body.name, goal: req.body.goal, added: req.body.added },
+    (err, result) => {
+      res.json(result);
+    }
+  );
 });
 
 router.put('/:name', (req, res) => {
-  const found = wishlists.some(
-    wishlist => wishlist.name === parseInt(req.params.name)
-  );
+  // const result = db
+  //   .collection('wishlists')
+  //   .findOne({ name: req.params.name }, function(err, result) {
+  //     if (err) throw err;
+
+  //     res.json(result);
+  //   });
+
+  const found = wishlists.some(wishlist => wishlist.name === req.params.name);
+  console.log(req.body);
+  if (req.body.goal) {
+    console.log('goal is %s', req.body.goal);
+  } else {
+    console.log('goal not in req.body');
+  }
   if (found) {
     const updateWishlist = req.body;
+
     wishlists.forEach(wishlist => {
       if (wishlist.name === parseInt(req.params.name)) {
         wishlist.name = updateWishlist.name
           ? updateWishlist.name
           : wishlist.name;
-        wishlist.email = updateWishlist.email
-          ? updateWishlist.email
-          : wishlist.email;
+        wishlist.goal = updateWishlist.goal
+          ? updateWishlist.goal
+          : wishlist.goal;
+        wishlist.added = updateWishlist.added
+          ? updateWishlist.added
+          : wishlist.added;
         res.json({ msg: 'wishlist updated', wishlist });
       }
     });
   } else {
+    console.log('not found');
     res
       .status(400)
-      .json({ msg: `No Wishlist with the id of ${req.params.id}` });
+      .json({ msg: `No Wishlist with the id of ${req.params.name}` });
   }
 });
 
 //delete wishlist
-router.delete('/:id', (req, res) => {
+router.delete('/:name', (req, res) => {
   const found = wishlists.some(
-    wishlist => wishlist.id === parseInt(req.params.id)
+    wishlist => wishlist.name === parseInt(req.params.name)
   );
   if (found) {
     res.json({
       msg: 'Wishlist deleted',
-      wishlists: wishlists.filter(
-        wishlist => wishlist.id !== parseInt(req.params.id)
-      )
+      wishlists: wishlists.filter(wishlist => wishlist.name !== req.params.name)
     });
   } else {
     res
       .status(400)
-      .json({ msg: `No wishlist with the id of ${req.params.id}` });
+      .json({ msg: `No wishlist with the name of ${req.params.name}` });
   }
 });
 module.exports = router;
