@@ -112,6 +112,7 @@ router.put('/:name', (req, res) => {
 
 //delete wishlist
 router.delete('/:name', (req, res) => {
+  // must load in wishlist from db first
   const found = wishlists.some(
     wishlist => wishlist.name === parseInt(req.params.name)
   );
