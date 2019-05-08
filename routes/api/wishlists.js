@@ -1,12 +1,13 @@
 const express = require('express');
 const wishlists = require('../../Wishlists');
+const passwrd = require('../../config');
 const router = express.Router();
 const uuid = require('uuid');
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
 
 // Connection URL
-const url = 'mongodb://david:password99@ds127536.mlab.com:27536/save-spend-share';
+const url = `mongodb://david:${password}@ds127536.mlab.com:27536/save-spend-share`;
 
 // Database Name
 const dbName = 'save-spend-share';
