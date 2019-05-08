@@ -1,9 +1,14 @@
 const express = require('express');
+const cors = require('cors');
 
 const logger = require('./middleware/logger');
 
 const app = express();
-
+app.use(
+  cors({
+    origin: 'http://localhost:8080'
+  })
+);
 // app.use(logger);
 
 app.get('/', (req, res) => {
